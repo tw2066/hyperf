@@ -9,14 +9,12 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Di;
 
 class MethodDefinitionCollector extends AbstractCallableDefinitionCollector implements MethodDefinitionCollectorInterface
 {
-    /**
-     * @var array
-     */
-    protected static $container = [];
+    protected static array $container = [];
 
     /**
      * Get the method definition from metadata container,
@@ -55,7 +53,7 @@ class MethodDefinitionCollector extends AbstractCallableDefinitionCollector impl
                     $definitions[] = [
                         'type' => 'object',
                         'name' => $parameter->getName(),
-                        'ref' => $parameter->getClass()->getName() ?? null,
+                        'ref' => $type ?? null,
                         'allowsNull' => $parameter->allowsNull(),
                     ];
                     break;

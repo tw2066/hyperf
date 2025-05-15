@@ -9,27 +9,23 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Di\Aop;
 
-use Hyperf\Utils\Composer;
-use PhpParser\Node\Stmt\Class_;
+use Hyperf\Support\Composer;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
+use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
 
 class Ast
 {
-    /**
-     * @var \PhpParser\Parser
-     */
-    private $astParser;
+    private Parser $astParser;
 
-    /**
-     * @var PrettyPrinterAbstract
-     */
-    private $printer;
+    private PrettyPrinterAbstract $printer;
 
     public function __construct()
     {
@@ -48,9 +44,8 @@ class Ast
         $code = $this->getCodeByClassName($className);
         $stmts = $this->astParser->parse($code);
         $traverser = new NodeTraverser();
-        $visitorMetadata = new VisitorMetadata();
-        $visitorMetadata->className = $className;
-        // User could modify or replace the node vistors by Hyperf\Di\Aop\AstVisitorRegistry.
+        $visitorMetadata = new VisitorMetadata($className);
+        // User could modify or replace the node visitors by Hyperf\Di\Aop\AstVisitorRegistry.
         $queue = clone AstVisitorRegistry::getQueue();
         foreach ($queue as $string) {
             $visitor = new $string($visitorMetadata);
@@ -67,7 +62,7 @@ class Ast
             if ($stmt instanceof Namespace_ && $stmt->name) {
                 $namespace = $stmt->name->toString();
                 foreach ($stmt->stmts as $node) {
-                    if ($node instanceof Class_ && $node->name) {
+                    if (($node instanceof ClassLike) && $node->name) {
                         $className = $node->name->toString();
                         break;
                     }

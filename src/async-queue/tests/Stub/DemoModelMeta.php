@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace HyperfTest\AsyncQueue\Stub;
 
-use Hyperf\Contract\CompressInterface;
+use Hyperf\Context\Context;
 use Hyperf\Contract\UnCompressInterface;
-use Hyperf\Utils\Context;
 
 class DemoModelMeta implements UnCompressInterface
 {
@@ -24,9 +24,13 @@ class DemoModelMeta implements UnCompressInterface
         $this->id = $id;
     }
 
-    public function uncompress(): CompressInterface
+    public function uncompress()
     {
         $data = Context::get('test.async-queue.demo.model.' . $this->id);
+
+        if ($this->id === 9999) {
+            return null;
+        }
 
         return new DemoModel($this->id, ...$data);
     }

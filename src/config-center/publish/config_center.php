@@ -9,8 +9,18 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+use Hyperf\Codec\Packer\JsonPacker;
+use Hyperf\ConfigAliyunAcm\AliyunAcmDriver;
+use Hyperf\ConfigApollo\ApolloDriver;
 use Hyperf\ConfigApollo\PullMode;
 use Hyperf\ConfigCenter\Mode;
+use Hyperf\ConfigEtcd\EtcdDriver;
+use Hyperf\ConfigNacos\Constants;
+use Hyperf\ConfigNacos\NacosDriver;
+use Hyperf\ConfigZookeeper\ZookeeperDriver;
+use Hyperf\Support\Network;
+
+use function Hyperf\Support\env;
 
 return [
     'enable' => (bool) env('CONFIG_CENTER_ENABLE', true),
@@ -18,7 +28,7 @@ return [
     'mode' => env('CONFIG_CENTER_MODE', Mode::PROCESS),
     'drivers' => [
         'apollo' => [
-            'driver' => Hyperf\ConfigApollo\ApolloDriver::class,
+            'driver' => ApolloDriver::class,
             'pull_mode' => PullMode::INTERVAL,
             'server' => 'http://127.0.0.1:9080',
             'appid' => 'test',
@@ -28,31 +38,31 @@ return [
             ],
             'interval' => 5,
             'strict_mode' => false,
-            'client_ip' => current(swoole_get_local_ip()),
+            'client_ip' => Network::ip(),
             'pullTimeout' => 10,
             'interval_timeout' => 1,
         ],
         'nacos' => [
-            'driver' => Hyperf\ConfigNacos\NacosDriver::class,
-            'merge_mode' => Hyperf\ConfigNacos\Constants::CONFIG_MERGE_OVERWRITE,
+            'driver' => NacosDriver::class,
+            'merge_mode' => Constants::CONFIG_MERGE_OVERWRITE,
             'interval' => 3,
             'default_key' => 'nacos_config',
             'listener_config' => [
                 // dataId, group, tenant, type, content
-                'nacos_config' => [
-                    'tenant' => 'tenant', // corresponding with service.namespaceId
-                    'data_id' => 'hyperf-service-config',
-                    'group' => 'DEFAULT_GROUP',
-                ],
-                'nacos_config.data' => [
-                    'data_id' => 'hyperf-service-config-yml',
-                    'group' => 'DEFAULT_GROUP',
-                    'type' => 'yml',
-                ],
+                // 'nacos_config' => [
+                //     'tenant' => 'tenant', // corresponding with service.namespaceId
+                //     'data_id' => 'hyperf-service-config',
+                //     'group' => 'DEFAULT_GROUP',
+                // ],
+                // 'nacos_config.data' => [
+                //     'data_id' => 'hyperf-service-config-yml',
+                //     'group' => 'DEFAULT_GROUP',
+                //     'type' => 'yml',
+                // ],
             ],
             'client' => [
                 // nacos server url like https://nacos.hyperf.io, Priority is higher than host:port
-                // 'url' => '',
+                // 'uri' => '',
                 'host' => '127.0.0.1',
                 'port' => 8848,
                 'username' => null,
@@ -60,10 +70,15 @@ return [
                 'guzzle' => [
                     'config' => null,
                 ],
+                // Only support for nacos v2.
+                'grpc' => [
+                    'enable' => false,
+                    'heartbeat' => 10,
+                ],
             ],
         ],
         'aliyun_acm' => [
-            'driver' => Hyperf\ConfigAliyunAcm\AliyunAcmDriver::class,
+            'driver' => AliyunAcmDriver::class,
             'interval' => 5,
             'endpoint' => env('ALIYUN_ACM_ENDPOINT', 'acm.aliyun.com'),
             'namespace' => env('ALIYUN_ACM_NAMESPACE', ''),
@@ -74,8 +89,8 @@ return [
             'ecs_ram_role' => env('ALIYUN_ACM_RAM_ROLE', ''),
         ],
         'etcd' => [
-            'driver' => Hyperf\ConfigEtcd\EtcdDriver::class,
-            'packer' => Hyperf\Utils\Packer\JsonPacker::class,
+            'driver' => EtcdDriver::class,
+            'packer' => JsonPacker::class,
             'namespaces' => [
                 '/application',
             ],
@@ -94,7 +109,7 @@ return [
             ],
         ],
         'zookeeper' => [
-            'driver' => Hyperf\ConfigZookeeper\ZookeeperDriver::class,
+            'driver' => ZookeeperDriver::class,
             'server' => env('ZOOKEEPER_SERVER', '127.0.0.1:2181'),
             'path' => env('ZOOKEEPER_CONFIG_PATH', '/conf'),
             'interval' => 5,

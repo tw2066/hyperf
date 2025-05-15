@@ -66,7 +66,7 @@ return [
 
 此配置文件用于管理 Server 服务，其中的 `settings` 选项可以直接使用由 `Swoole Server` 提供的选项，其他选项可参考 [Swoole 官方文档](https://wiki.swoole.com/#/server/setting) 。
 
-如需要设置守护进程化，可在 `settings` 中增加 `'daemonize' => 1`，执行 `php bin/hyperf.php start`后，程序将转入后台作为守护进程运行
+如需要设置守护进程化，可在 `settings` 中增加 `'daemonize' => true`，执行 `php bin/hyperf.php start`后，程序将转入后台作为守护进程运行
 
 单独的 Server 配置需要添加在对应 `servers` 的 `settings` 当中，如 `jsonrpc` 协议的 TCP Server 配置启用 EOF 自动分包和设置 EOF 字符串
 ```php
@@ -131,7 +131,7 @@ return [
 
 ### 获取配置
 
-Config 组件提供了三种方式获取配置，通过 `Hyperf\Config\Config` 对象获取、通过 `@Value` 注解获取和通过 `config(string $key, $default)` 函数获取。
+Config 组件提供了三种方式获取配置，通过 `Hyperf\Config\Config` 对象获取、通过 `#[Value]` 注解获取和通过 `config(string $key, $default)` 函数获取。
 
 #### 通过 Config 对象获取配置
 
@@ -145,31 +145,29 @@ Config 组件提供了三种方式获取配置，通过 `Hyperf\Config\Config` �
 $config->get($key，$default);
 ```
 
-#### 通过 `@Value` 注解获取配置
+#### 通过 `#[Value]` 注解获取配置
 
 这种方式要求注解的应用对象必须是通过 [hyperf/di](https://github.com/hyperf/di) 组件创建的，注入实例的细节可查阅 [依赖注入](zh-cn/di.md) 章节，示例中我们假设 `IndexController` 就是一个已经定义好的 `Controller` 类，`Controller` 类一定是由 `DI` 容器创建出来的；   
-`@Value()` 内的字符串则对应到 `$config->get($key)` 内的 `$key` 参数，在创建该对象实例时，对应的配置会自动注入到定义的类属性中。
+`#[Value]` 内的字符串则对应到 `$config->get($key)` 内的 `$key` 参数，在创建该对象实例时，对应的配置会自动注入到定义的类属性中。
 
 ```php
+use Hyperf\Config\Annotation\Value;
+
 class IndexController
 {
-    
-    /**
-     * @Value("config.key")
-     */
+    #[Value("config.key")]
     private $configValue;
-    
+
     public function index()
     {
         return $this->configValue;
     }
-    
 }
 ```
 
 #### 通过 config 函数获取
 
-在任意地方可以通过 `config(string $key, $default)` 函数获取对应的配置，但这样的使用方式也就意味着您对 [hyperf/config](https://github.com/hyperf/config) 和 [hyperf/utils](https://github.com/hyperf/utils) 组件是强依赖的。
+在任意地方可以通过 `config(string $key, $default)` 函数获取对应的配置，但这样的使用方式也就意味着您对 [hyperf/config](https://github.com/hyperf/config) 和 [hyperf/support](https://github.com/hyperf/support) 组件是强依赖的。
 
 ### 判断配置是否存在
 

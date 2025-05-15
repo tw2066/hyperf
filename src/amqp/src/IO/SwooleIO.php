@@ -9,14 +9,16 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Amqp\IO;
 
+use InvalidArgumentException;
 use PhpAmqpLib\Exception\AMQPConnectionClosedException;
+use PhpAmqpLib\Exception\AMQPIOException;
 use PhpAmqpLib\Exception\AMQPRuntimeException;
 use PhpAmqpLib\Wire\AMQPWriter;
 use PhpAmqpLib\Wire\IO\AbstractIO;
-use Swoole\Coroutine\Client;
-use const SWOOLE_SOCK_TCP;
+use Swoole\Coroutine\Socket;
 
 class SwooleIO extends AbstractIO
 {
@@ -35,34 +37,22 @@ class SwooleIO extends AbstractIO
     /**
      * @var int
      */
-    protected $connectionTimeout;
-
-    /**
-     * @var int
-     */
     protected $heartbeat;
 
-    /**
-     * @var null|Client
-     */
-    private $sock;
+    private ?Socket $sock = null;
 
     /**
-     * @var string
-     */
-    private $buffer = '';
-
-    /**
-     * @throws \InvalidArgumentException when readWriteTimeout argument does not 2x the heartbeat
+     * @throws InvalidArgumentException when readWriteTimeout argument does not 2x the heartbeat
      */
     public function __construct(
         string $host,
         int $port,
-        int $connectionTimeout
+        protected int $connectionTimeout,
+        protected int $readWriteTimeout = 3,
+        protected bool $openSSL = false
     ) {
         $this->host = $host;
         $this->port = $port;
-        $this->connectionTimeout = $connectionTimeout;
     }
 
     /**
@@ -70,41 +60,28 @@ class SwooleIO extends AbstractIO
      *
      * @throws AMQPRuntimeException
      */
-    public function connect()
+    public function connect(): void
     {
         $this->sock = $this->makeClient();
     }
 
-    public function read($len)
+    public function read($len): string
     {
-        do {
-            if ($len <= strlen($this->buffer)) {
-                $data = substr($this->buffer, 0, $len);
-                $this->buffer = substr($this->buffer, $len);
+        $data = $this->sock->recvAll($len, $this->readWriteTimeout);
+        if ($data === false || strlen($data) !== $len) {
+            throw new AMQPConnectionClosedException('Read data failed, The reason is ' . $this->sock->errMsg);
+        }
 
-                return $data;
-            }
-
-            if (! $this->sock->isConnected()) {
-                throw new AMQPConnectionClosedException('Broken pipe or closed connection. ' . $this->sock->errMsg);
-            }
-
-            $buffer = $this->sock->recv(-1);
-
-            if ($buffer === '') {
-                throw new AMQPConnectionClosedException('Connection is closed. The reason is ' . $this->sock->errMsg);
-            }
-
-            $this->buffer .= $buffer;
-        } while (true);
+        return $data;
     }
 
-    public function write($data)
+    public function write($data): void
     {
-        $buffer = $this->sock->send($data);
+        $len = $this->sock->sendAll($data, $this->readWriteTimeout);
 
-        if ($buffer === false) {
-            throw new AMQPConnectionClosedException('Error sending data');
+        /* @phpstan-ignore-next-line */
+        if ($data === false || strlen($data) !== $len) {
+            throw new AMQPConnectionClosedException('Send data failed, The reason is ' . $this->sock->errMsg);
         }
     }
 
@@ -112,29 +89,34 @@ class SwooleIO extends AbstractIO
     {
     }
 
-    public function close()
+    public function close(): void
     {
         $this->sock && $this->sock->close();
     }
 
-    public function select($sec, $usec)
+    public function select(?int $sec, int $usec = 0): int
     {
         return 1;
     }
 
-    public function disableHeartbeat()
+    public function disableHeartbeat(): AbstractIO
     {
         return $this;
     }
 
-    public function reenableHeartbeat()
+    public function reenableHeartbeat(): AbstractIO
     {
         return $this;
     }
 
-    protected function makeClient()
+    protected function makeClient(): Socket
     {
-        $sock = new Client(SWOOLE_SOCK_TCP);
+        $sock = new Socket(AF_INET, SOCK_STREAM, 0);
+
+        if ($this->openSSL === true) {
+            $sock->setProtocol(['open_ssl' => true]);
+        }
+
         if (! $sock->connect($this->host, $this->port, $this->connectionTimeout)) {
             throw new AMQPRuntimeException(
                 sprintf('Error Connecting to server: %s ', $sock->errMsg),
@@ -144,7 +126,10 @@ class SwooleIO extends AbstractIO
         return $sock;
     }
 
-    protected function write_heartbeat()
+    /**
+     * @throws AMQPIOException
+     */
+    protected function write_heartbeat(): void
     {
         $pkt = new AMQPWriter();
         $pkt->write_octet(8);
@@ -154,7 +139,7 @@ class SwooleIO extends AbstractIO
         $this->write($pkt->getvalue());
     }
 
-    protected function do_select($sec, $usec)
+    protected function do_select($sec, $usec): int
     {
         return 1;
     }

@@ -9,18 +9,17 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Di;
 
-use Hyperf\Utils\Arr;
+use Hyperf\Collection\Arr;
 
 abstract class MetadataCollector implements MetadataCollectorInterface
 {
     /**
      * Subclass MUST override this property.
-     *
-     * @var array
      */
-    protected static $container = [];
+    protected static array $container = [];
 
     /**
      * Retrieve the metadata via key.
@@ -71,8 +70,7 @@ abstract class MetadataCollector implements MetadataCollectorInterface
      */
     public static function deserialize(string $metadata): bool
     {
-        $data = unserialize($metadata);
-        static::$container = $data;
+        static::$container = unserialize($metadata);
         return true;
     }
 

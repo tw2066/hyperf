@@ -2,8 +2,6 @@
 
 本組件基於 `TCP` 協議，多路複用的設計借鑑於 `AMQP` 組件。
 
-> 暫不支持註冊中心
-
 ## 安裝
 
 ```
@@ -42,6 +40,10 @@ return [
                 'package_body_offset' => 4,
                 'package_max_length' => 1024 * 1024 * 2,
             ],
+            'options' => [
+                // 多路複用下，避免跨協程 Socket 跨協程多寫報錯
+                'send_channel_capacity' => 65535,
+            ],
         ],
     ],
 ];
@@ -59,9 +61,7 @@ use App\JsonRpc\CalculatorServiceInterface;
 use Hyperf\RpcMultiplex\Constant;
 use Hyperf\RpcServer\Annotation\RpcService;
 
-/**
- * @RpcService(name="CalculatorService", server="rpc", protocol=Constant::PROTOCOL_DEFAULT)
- */
+#[RpcService(name: "CalculatorService", server: "rpc", protocol: Constant::PROTOCOL_DEFAULT)]
 class CalculatorService implements CalculatorServiceInterface
 {
 }
@@ -85,6 +85,11 @@ return [
             'id' => App\JsonRpc\CalculatorServiceInterface::class,
             'protocol' => Hyperf\RpcMultiplex\Constant::PROTOCOL_DEFAULT,
             'load_balancer' => 'random',
+            // 這個消費者要從哪個服務中心獲取節點信息，如不配置則不會從服務中心獲取節點信息
+            'registry' => [
+                'protocol' => 'consul',
+                'address' => 'http://127.0.0.1:8500',
+            ],
             'nodes' => [
                 ['host' => '127.0.0.1', 'port' => 9502],
             ],
@@ -101,7 +106,7 @@ return [
                 'retry_interval' => 100,
                 // 多路複用客户端數量
                 'client_count' => 4,
-                // 心跳間隔 非 numeric 表示不開啟心跳
+                // 心跳間隔 非 numeric 表示不開啓心跳
                 'heartbeat' => 30,
             ],
         ],
@@ -110,5 +115,69 @@ return [
 
 ```
 
+### 註冊中心
 
+如果需要使用註冊中心，則需要手動添加以下監聽器
 
+```php
+<?php
+return [
+    Hyperf\RpcMultiplex\Listener\RegisterServiceListener::class,
+];
+```
+
+## 使用
+
+- 定義接口
+
+比如我們需要設計一個發送短信的 RPC 服務
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace RPC\Push;
+
+interface PushInterface
+{
+    public function sendSmsCode(string $mobile, string $code): bool;
+}
+
+```
+
+- 服務端實現接口
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\RPC;
+
+use RPC\Push\PushInterface;
+use Hyperf\RpcMultiplex\Constant;
+use Hyperf\RpcServer\Annotation\RpcService;
+
+#[RpcService(name: PushInterface::class, server: 'rpc', protocol: Constant::PROTOCOL_DEFAULT)]
+class PushService implements PushInterface
+{
+    public function sendSmsCode(string $mobile, string $code): bool
+    {
+        // 實際處理邏輯
+        return true;
+    }
+}
+```
+
+- 客户端調用
+
+```php
+<?php
+
+use Hyperf\Context\ApplicationContext;
+use RPC\Push\PushInterface;
+
+ApplicationContext::getContainer()->get(PushInterface::class)->sendSmsCode('18600000001', '6666');
+
+```

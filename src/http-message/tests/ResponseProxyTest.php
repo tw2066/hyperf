@@ -9,15 +9,18 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace HyperfTest\HttpMessage;
 
 use Hyperf\HttpMessage\Server\Response;
 use HyperfTest\HttpMessage\Stub\Server\ResponseStub;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 /**
  * @internal
  * @coversNothing
  */
+#[CoversNothing]
 class ResponseProxyTest extends ResponseTest
 {
     protected function tearDown(): void
@@ -38,6 +41,11 @@ class ResponseProxyTest extends ResponseTest
     public function testCookies()
     {
         parent::testCookies();
+    }
+
+    public function testWrite()
+    {
+        $this->markTestSkipped('Response proxy does not support chunk.');
     }
 
     protected function newResponse()

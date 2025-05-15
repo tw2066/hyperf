@@ -9,21 +9,19 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\ServiceGovernanceNacos\Process;
 
 use Hyperf\Contract\ConfigInterface;
+use Hyperf\Contract\IPReaderInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Nacos\Application;
 use Hyperf\Process\AbstractProcess;
 use Hyperf\Process\ProcessManager;
-use Hyperf\ServiceGovernance\IPReaderInterface;
 
 class InstanceBeatProcess extends AbstractProcess
 {
-    /**
-     * @var string
-     */
-    public $name = 'nacos-heartbeat';
+    public string $name = 'nacos-heartbeat';
 
     public function handle(): void
     {
@@ -33,6 +31,7 @@ class InstanceBeatProcess extends AbstractProcess
 
         $serviceConfig = $config->get('nacos.service', []);
         $serviceName = $serviceConfig['service_name'];
+        $namespaceId = $serviceConfig['namespace_id'];
         $groupName = $serviceConfig['group_name'] ?? null;
         $instanceConfig = $serviceConfig['instance'] ?? [];
         $ephemeral = $instanceConfig['ephemeral'] ?? null;
@@ -53,10 +52,12 @@ class InstanceBeatProcess extends AbstractProcess
                     [
                         'ip' => $ip,
                         'port' => $port,
+                        'serviceName' => $groupName . '@@' . $serviceName,
                         'cluster' => $cluster,
                         'weight' => $weight,
                     ],
                     $groupName,
+                    $namespaceId,
                     $ephemeral
                 );
 

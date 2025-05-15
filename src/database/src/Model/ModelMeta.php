@@ -9,18 +9,13 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Database\Model;
 
-use Hyperf\Contract\CompressInterface;
 use Hyperf\Contract\UnCompressInterface;
 
 class ModelMeta implements UnCompressInterface
 {
-    /**
-     * @var string
-     */
-    public $class;
-
     /**
      * @var int|string
      */
@@ -29,13 +24,12 @@ class ModelMeta implements UnCompressInterface
     /**
      * @param int|string $key
      */
-    public function __construct(string $class, $key)
+    public function __construct(public string $class, $key)
     {
-        $this->class = $class;
         $this->key = $key;
     }
 
-    public function uncompress(): CompressInterface
+    public function uncompress()
     {
         if (is_null($this->key)) {
             return new $this->class();

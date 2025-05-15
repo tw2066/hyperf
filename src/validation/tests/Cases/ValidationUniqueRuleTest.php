@@ -9,16 +9,19 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace HyperfTest\Validation\Cases;
 
 use Hyperf\Database\Model\Model;
 use Hyperf\Validation\Rules\Unique;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @internal
  * @coversNothing
  */
+#[CoversNothing]
 class ValidationUniqueRuleTest extends TestCase
 {
     public function testItCorrectlyFormatsAStringVersionOfTheRule()
@@ -59,12 +62,16 @@ class ValidationUniqueRuleTest extends TestCase
         $rule = new Unique('table');
         $rule->where('foo', '"bar"');
         $this->assertEquals('unique:table,NULL,NULL,id,foo,"""bar"""', (string) $rule);
+
+        $rule = new Unique('table');
+        $rule->where('foo', 1);
+        $this->assertEquals('unique:table,NULL,NULL,id,foo,"1"', (string) $rule);
     }
 }
 
 class DatabaseModelStub extends Model
 {
-    protected $primaryKey = 'id_column';
+    protected string $primaryKey = 'id_column';
 
-    protected $guarded = [];
+    protected array $guarded = [];
 }
