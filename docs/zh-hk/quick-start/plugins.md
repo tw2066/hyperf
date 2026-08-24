@@ -20,8 +20,6 @@
 - Hyperf 頂級菜單：代碼生成（`gen:*`）與常用命令（`migrate`、`start`、`describe:routes` 等）一鍵在內置 Terminal 執行
 - 命令類行標記：`Hyperf\Command\Command` 子類類名旁的運行按鈕，點擊直接執行命令
 
-> 僅支持 PhpStorm 2026.2 及以上版本
-
 ### 數據庫插件
 
 可以在 PhpStorm 中安裝 [Hyperf Query](https://github.com/tw2066/hyperf-query-intellij) 插件，為 Hyperf 查詢構造器提供數據庫集成支持。它配合 DataGrip 為數據庫 schema、表、視圖和列提供自動補全，主要功能如下：

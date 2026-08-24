@@ -20,7 +20,6 @@
 - Hyperf 顶级菜单：代码生成（`gen:*`）与常用命令（`migrate`、`start`、`describe:routes` 等）一键在内置 Terminal 执行
 - 命令类行标记：`Hyperf\Command\Command` 子类类名旁的运行按钮，点击直接执行命令
 
-> 仅支持 PhpStorm 2026.2 及以上版本
 
 ### 数据库插件
 

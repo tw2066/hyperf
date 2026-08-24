@@ -20,8 +20,6 @@ Anda dapat menginstal plugin [Hyperf Base](https://github.com/tw2066/idea-plugin
 - Menu top-level Hyperf: menjalankan code generation (`gen:*`) dan perintah umum (`migrate`, `start`, `describe:routes`, dll.) di Terminal bawaan dengan satu klik
 - Line marker command: tombol run di samping nama class subclass `Hyperf\Command\Command`; klik untuk langsung menjalankan command
 
-> Hanya mendukung PhpStorm 2026.2 ke atas
-
 ### Plugin Database
 
 Anda dapat menginstal plugin [Hyperf Query](https://github.com/tw2066/hyperf-query-intellij) di PhpStorm untuk menyediakan integrasi database untuk query builder Hyperf. Plugin ini bekerja bersama DataGrip untuk menyediakan autocomplete untuk schema, tabel, view, dan kolom database:
